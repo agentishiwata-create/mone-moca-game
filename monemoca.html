@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>もねもかゲーム（仮）</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: #ffffff;
+      padding: 24px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      max-width: 420px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 22px;
+    }
+    .desc {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 16px;
+    }
+    .face-area {
+      margin: 16px 0;
+      padding: 24px 0;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      background: #fafafa;
+    }
+    .face-area img {
+      max-width: 80%;
+      max-height: 140px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    /* ★ ラベルは非表示にしておく */
+    .face-label {
+      display: none;
+    }
+    .button-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      background: #eee;
+    }
+    button.primary {
+      background: #007aff;
+      color: #fff;
+    }
+    button.secondary {
+      background: #ff2d55;
+      color: #fff;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-top: 8px;
+      color: #555;
+    }
+    .result {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+      font-size: 13px;
+      text-align: left;
+    }
+    .result p {
+      margin: 4px 0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #f0f0ff;
+      color: #333;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .small {
+      font-size: 11px;
+      color: #999;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>もねもかゲーム（仮）</h1>
+    <div class="desc">
+      画面に出てくる画像を見て、<br>
+      <b>「もねタイプ」か「もかタイプ」</b>を瞬時にタップ！
+      <br>※ローカルの画像を使った個人用お遊び版
+    </div>
+
+    <div class="status">
+      <div>時間：<span id="timeLeft">30.0</span>s</div>
+      <div>スコア：<span id="score">0</span>/<span id="total">0</span></div>
+    </div>
+
+    <div class="face-area" id="faceArea">
+      タップでスタート
+    </div>
+    <div class="face-label" id="faceHint">※スタート後に画像が出ます</div>
+
+    <div class="button-row">
+      <button id="btnMone" class="primary" disabled>もねタイプ</button>
+      <button id="btnMoka" class="secondary" disabled>もかタイプ</button>
+    </div>
+
+    <button id="btnStart" style="margin-top: 12px; width: 100%;" class="primary">
+      ゲームスタート（30秒）
+    </button>
+
+    <div class="result" id="result" style="display:none;">
+      <p><b>結果</b></p>
+      <p>正解数：<span id="resCorrect">0</span> / <span id="resTotal">0</span></p>
+      <p>正答率：<span id="resAccuracy">0</span>%</p>
+      <p>平均反応時間：<span id="resAvgTime">0</span> ms</p>
+      <p>称号：<span id="resTitle">-</span></p>
+      <div class="badge" id="resBadge"></div>
+    </div>
+
+    <div class="small">
+      画像は <code>img</code> フォルダ内のファイルを使用しています。
+    </div>
+  </div>
+
+  <script>
+    // ▼ ここがあなたの画像一覧に対応している部分
+    const faces = [
+      // もかタイプ（moca*, moka4）
+      { type: "moka", label: "もかタイプ1",  display: "img/moca1.webp"  },
+      { type: "moka", label: "もかタイプ2",  display: "img/moca2.webp"  },
+      { type: "moka", label: "もかタイプ3",  display: "img/moca3.jpg"   },
+      { type: "moka", label: "もかタイプ4",  display: "img/moka4.jpg"   },
+      { type: "moka", label: "もかタイプ5",  display: "img/moca5.jpg"   },
+      { type: "moka", label: "もかタイプ6",  display: "img/moca6.jpg"   },
+      { type: "moka", label: "もかタイプ7",  display: "img/moca6.webp"  },
+      { type: "moka", label: "もかタイプ8",  display: "img/moca7.jpg"   },
+      { type: "moka", label: "もかタイプ9",  display: "img/moca8.webp"  },
+      { type: "moka", label: "もかタイプ10", display: "img/moca9.jpg"   },
+      { type: "moka", label: "もかタイプ11", display: "img/moca10.webp" },
+
+      // もねタイプ（mone*）
+      { type: "mone", label: "もねタイプ1",  display: "img/mone1.jpg"   },
+      { type: "mone", label: "もねタイプ2",  display: "img/mone2.jpg"   },
+      { type: "mone", label: "もねタイプ3",  display: "img/mone3.jpg"   },
+      { type: "mone", label: "もねタイプ4",  display: "img/mone4.webp"  },
+      { type: "mone", label: "もねタイプ5",  display: "img/mone5.avif"  },
+      { type: "mone", label: "もねタイプ6",  display: "img/mone6.webp"  },
+      { type: "mone", label: "もねタイプ7",  display: "img/mone7.jpg"   },
+      { type: "mone", label: "もねタイプ8",  display: "img/mone8.webp"  },
+      { type: "mone", label: "もねタイプ9",  display: "img/mone9.jpg"   },
+      { type: "mone", label: "もねタイプ10", display: "img/mone10.jpg"  }
+    ];
+
+    const TIME_LIMIT_MS = 30000; // 30秒
+
+    const faceArea = document.getElementById("faceArea");
+    const faceHint = document.getElementById("faceHint");
+    const btnMone = document.getElementById("btnMone");
+    const btnMoka = document.getElementById("btnMoka");
+    const btnStart = document.getElementById("btnStart");
+
+    const timeLeftEl = document.getElementById("timeLeft");
+    const scoreEl = document.getElementById("score");
+    const totalEl = document.getElementById("total");
+
+    const resultBox = document.getElementById("result");
+    const resCorrectEl = document.getElementById("resCorrect");
+    const resTotalEl = document.getElementById("resTotal");
+    const resAccuracyEl = document.getElementById("resAccuracy");
+    const resAvgTimeEl = document.getElementById("resAvgTime");
+    const resTitleEl = document.getElementById("resTitle");
+    const resBadgeEl = document.getElementById("resBadge");
+
+    let currentFace = null;
+    let correctCount = 0;
+    let totalCount = 0;
+    let reactionTimes = [];
+    let gameStartTime = 0;
+    let lastShowTime = 0;
+    let timerId = null;
+
+    function formatTime(ms) {
+      return (ms / 1000).toFixed(1);
+    }
+
+    function pickRandomFace() {
+      const idx = Math.floor(Math.random() * faces.length);
+      return faces[idx];
+    }
+
+    function showNewFace() {
+      currentFace = pickRandomFace();
+      // ★ ここで画像を表示（絵文字じゃなく画像）
+      faceArea.innerHTML = "<img src='" + currentFace.display + "' alt='" + currentFace.label + "'>";
+      lastShowTime = performance.now();
+    }
+
+    function updateStatus() {
+      scoreEl.textContent = correctCount;
+      totalEl.textContent = totalCount;
+    }
+
+    function endGame() {
+      clearInterval(timerId);
+      timerId = null;
+      btnMone.disabled = true;
+      btnMoka.disabled = true;
+      btnStart.disabled = false;
+
+      const accuracy = totalCount === 0 ? 0 : Math.round((correctCount / totalCount) * 100);
+      const avgTime = reactionTimes.length === 0
+        ? 0
+        : Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length);
+
+      resCorrectEl.textContent = correctCount;
+      resTotalEl.textContent = totalCount;
+      resAccuracyEl.textContent = accuracy.toString();
+      resAvgTimeEl.textContent = avgTime.toString();
+
+      let title = "";
+      let badge = "";
+      if (accuracy >= 90 && avgTime < 350) {
+        title = "神レベル判定士";
+        badge = "一瞬で見分ける達人";
+      } else if (accuracy >= 80 && avgTime < 500) {
+        title = "上級もねもかマスター";
+        badge = "かなりのガチ勢";
+      } else if (accuracy >= 60) {
+        title = "中級もねもかファン";
+        badge = "反応速度を鍛えよう";
+      } else {
+        title = "ビギナー";
+        badge = "まずは顔に慣れよう";
+      }
+
+      resTitleEl.textContent = title;
+      resBadgeEl.textContent = badge;
+      resultBox.style.display = "block";
+    }
+
+    function startGame() {
+      correctCount = 0;
+      totalCount = 0;
+      reactionTimes = [];
+      updateStatus();
+      resultBox.style.display = "none";
+
+      btnMone.disabled = false;
+      btnMoka.disabled = false;
+      btnStart.disabled = true;
+
+      gameStartTime = performance.now();
+      lastShowTime = gameStartTime;
+      timeLeftEl.textContent = formatTime(TIME_LIMIT_MS);
+
+      showNewFace();
+
+      timerId = setInterval(() => {
+        const now = performance.now();
+        const elapsed = now - gameStartTime;
+        const remaining = Math.max(0, TIME_LIMIT_MS - elapsed);
+        timeLeftEl.textContent = formatTime(remaining);
+
+        if (remaining <= 0) {
+          endGame();
+        }
+      }, 50);
+    }
+
+    function handleAnswer(answerType) {
+      if (!currentFace || !timerId) return;
+
+      const now = performance.now();
+      const reaction = now - lastShowTime;
+      reactionTimes.push(reaction);
+
+      totalCount++;
+      if (answerType === currentFace.type) {
+        correctCount++;
+      }
+      updateStatus();
+
+      showNewFace();
+    }
+
+    btnStart.addEventListener("click", startGame);
+    faceArea.addEventListener("click", () => {
+      if (!timerId) {
+        startGame();
+      }
+    });
+    btnMone.addEventListener("click", () => handleAnswer("mone"));
+    btnMoka.addEventListener("click", () => handleAnswer("moka"));
+  </script>
+</body>
+</html>
