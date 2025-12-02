@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>もねもかゲーム（仮）</title>
+  <!-- スマホ用表示 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -17,48 +18,59 @@
     }
     .container {
       background: #ffffff;
-      padding: 24px 20px;
+      padding: 16px 12px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      max-width: 420px;
+      max-width: 480px;
       width: 100%;
       box-sizing: border-box;
       text-align: center;
     }
     h1 {
       margin-top: 0;
-      font-size: 22px;
+      font-size: 20px;
     }
     .desc {
       font-size: 13px;
       color: #555;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-top: 4px;
+      color: #555;
+    }
+
+    /* 画像を入れる箱：高さ固定 → ボタン位置が安定 */
     .face-area {
- margin: 12px 0;
-  padding: 4px 0;
-  border-radius: 12px;
-  border: 1px solid #eee;
-  height: 55vh;              /* ★ 高さを固定（画面の55％ぶん） */
-  max-height: 420px;         /* ★ デカすぎ防止（お好みで） */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fafafa;
-  overflow: hidden;          /* はみ出した分は隠す */
+      margin: 12px 0;
+      padding: 4px 0;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      height: 55vh;          /* 画面の55%の高さに固定 */
+      max-height: 420px;     /* デカすぎ防止（お好みで調整可） */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      overflow: hidden;      /* はみ出した画像は隠す */
     }
     .face-area img {
-max-width: 100%;
-  max-height: 100%;   /* ★ 箱（face-area）の高さに合わせて収める */
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
     }
-    /* ★ ラベルは非表示にしておく */
+
+    /* ラベルは使わないので非表示 */
     .face-label {
       display: none;
     }
+
     .button-row {
       display: flex;
       gap: 8px;
@@ -86,22 +98,16 @@ max-width: 100%;
       opacity: 0.4;
       cursor: default;
     }
-    .status {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-top: 8px;
-      color: #555;
-    }
+
     .result {
-      margin-top: 16px;
-      padding-top: 12px;
+      margin-top: 12px;
+      padding-top: 8px;
       border-top: 1px solid #eee;
       font-size: 13px;
       text-align: left;
     }
     .result p {
-      margin: 4px 0;
+      margin: 3px 0;
     }
     .badge {
       display: inline-block;
@@ -112,10 +118,52 @@ max-width: 100%;
       font-size: 11px;
       margin-top: 4px;
     }
+
+    .history {
+      margin-top: 8px;
+      max-height: 220px;   /* 答え合わせリストの高さ上限 */
+      overflow-y: auto;
+      padding-top: 4px;
+      border-top: 1px dashed #ddd;
+      font-size: 12px;
+    }
+    .history h4 {
+      margin: 4px 0 4px;
+      font-size: 12px;
+    }
+    .history ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .history li {
+      margin-bottom: 6px;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .history-item img {
+      max-width: 48px;
+      max-height: 48px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .history-text {
+      line-height: 1.3;
+    }
+    .history-text code {
+      font-size: 10px;
+      background: #f3f3f3;
+      padding: 0 3px;
+      border-radius: 3px;
+    }
+
     .small {
       font-size: 11px;
       color: #999;
-      margin-top: 8px;
+      margin-top: 6px;
     }
   </style>
 </head>
@@ -125,7 +173,7 @@ max-width: 100%;
     <div class="desc">
       画面に出てくる画像を見て、<br>
       <b>「もねタイプ」か「もかタイプ」</b>を瞬時にタップ！
-      <br>※ローカルの画像を使った個人用お遊び版
+      <br>※ローカル画像を使った個人用お遊び版
     </div>
 
     <div class="status">
@@ -136,7 +184,7 @@ max-width: 100%;
     <div class="face-area" id="faceArea">
       タップでスタート
     </div>
-    <div class="face-label" id="faceHint">※スタート後に画像が出ます</div>
+    <div class="face-label" id="faceHint"></div>
 
     <div class="button-row">
       <button id="btnMone" class="primary" disabled>もねタイプ</button>
@@ -154,15 +202,17 @@ max-width: 100%;
       <p>平均反応時間：<span id="resAvgTime">0</span> ms</p>
       <p>称号：<span id="resTitle">-</span></p>
       <div class="badge" id="resBadge"></div>
+      <div id="resultHistory" class="history"></div>
     </div>
 
     <div class="small">
-      画像は <code>img</code> フォルダ内のファイルを使用しています。
+      画像は <code>img</code> フォルダ内のファイルを使用しています。<br>
+      ※公開用途ではオリジナルキャラや自作素材推奨
     </div>
   </div>
 
   <script>
-    // ▼ ここがあなたの画像一覧に対応している部分
+    // あなたの画像ファイル一覧に対応した faces 配列
     const faces = [
       // もかタイプ（moca*, moka4）
       { type: "moka", label: "もかタイプ1",  display: "img/moca1.webp"  },
@@ -193,7 +243,6 @@ max-width: 100%;
     const TIME_LIMIT_MS = 30000; // 30秒
 
     const faceArea = document.getElementById("faceArea");
-    const faceHint = document.getElementById("faceHint");
     const btnMone = document.getElementById("btnMone");
     const btnMoka = document.getElementById("btnMoka");
     const btnStart = document.getElementById("btnStart");
@@ -209,41 +258,73 @@ max-width: 100%;
     const resAvgTimeEl = document.getElementById("resAvgTime");
     const resTitleEl = document.getElementById("resTitle");
     const resBadgeEl = document.getElementById("resBadge");
+    const resultHistoryEl = document.getElementById("resultHistory");
 
     let currentFace = null;
+    let lastFace = null;        // 直前に出した画像
     let correctCount = 0;
     let totalCount = 0;
     let reactionTimes = [];
     let gameStartTime = 0;
     let lastShowTime = 0;
     let timerId = null;
+    let history = [];           // 出題履歴
 
     function formatTime(ms) {
       return (ms / 1000).toFixed(1);
     }
 
- let lastFace = null;
-
-function pickRandomFace() {
-  let next;
-  do {
-    next = faces[Math.floor(Math.random() * faces.length)];
-  } while (next === lastFace);  // 直前と同じなら引き直し
-
-  lastFace = next;
-  return next;
+    // 直前と同じ画像は出さないランダム
+    function pickRandomFace() {
+      if (faces.length === 0) return null;
+      let next = null;
+      do {
+        next = faces[Math.floor(Math.random() * faces.length)];
+      } while (faces.length > 1 && next === lastFace);
+      lastFace = next;
+      return next;
     }
 
     function showNewFace() {
       currentFace = pickRandomFace();
-      // ★ ここで画像を表示（絵文字じゃなく画像）
-      faceArea.innerHTML = "<img src='" + currentFace.display + "' alt='" + currentFace.label + "'>";
+      if (!currentFace) return;
+      faceArea.innerHTML = "<img src='" + currentFace.display + "' alt=''>";
       lastShowTime = performance.now();
     }
 
     function updateStatus() {
       scoreEl.textContent = correctCount;
       totalEl.textContent = totalCount;
+    }
+
+    // 答え合わせリストを描画
+    function renderHistory() {
+      if (history.length === 0) {
+        resultHistoryEl.innerHTML = "";
+        return;
+      }
+
+      let html = "<h4>答え合わせ</h4><ul>";
+      history.forEach((item, index) => {
+        const correctLabel = item.correctType === "mone" ? "もね" : "もか";
+        const answerLabel = item.userAnswer === "mone" ? "もね" : "もか";
+        const mark = item.isCorrect ? "⭕" : "❌";
+
+        html += `
+          <li>
+            <div class="history-item">
+              <img src="${item.file}" alt="">
+              <div class="history-text">
+                <div>${index + 1}. 回答：<b>${answerLabel}</b> ／ 正解：<b>${correctLabel}</b> ${mark}</div>
+                <div><span style="font-size:10px;">反応時間：${item.reaction}ms</span></div>
+                <div><code>${item.file}</code></div>
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      html += "</ul>";
+      resultHistoryEl.innerHTML = html;
     }
 
     function endGame() {
@@ -281,6 +362,10 @@ function pickRandomFace() {
 
       resTitleEl.textContent = title;
       resBadgeEl.textContent = badge;
+
+      // 答え合わせを描画
+      renderHistory();
+
       resultBox.style.display = "block";
     }
 
@@ -288,8 +373,12 @@ function pickRandomFace() {
       correctCount = 0;
       totalCount = 0;
       reactionTimes = [];
+      history = [];
+      lastFace = null;
+
       updateStatus();
       resultBox.style.display = "none";
+      resultHistoryEl.innerHTML = "";
 
       btnMone.disabled = false;
       btnMoka.disabled = false;
@@ -318,6 +407,17 @@ function pickRandomFace() {
 
       const now = performance.now();
       const reaction = now - lastShowTime;
+      const rounded = Math.round(reaction);
+
+      // 履歴に記録
+      history.push({
+        file: currentFace.display,
+        correctType: currentFace.type,
+        userAnswer: answerType,
+        isCorrect: answerType === currentFace.type,
+        reaction: rounded
+      });
+
       reactionTimes.push(reaction);
 
       totalCount++;
@@ -340,7 +440,3 @@ function pickRandomFace() {
   </script>
 </body>
 </html>
-
-
-
-
