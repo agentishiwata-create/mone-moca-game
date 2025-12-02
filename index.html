@@ -222,9 +222,16 @@ max-width: 100%;
       return (ms / 1000).toFixed(1);
     }
 
-    function pickRandomFace() {
-      const idx = Math.floor(Math.random() * faces.length);
-      return faces[idx];
+ let lastFace = null;
+
+function pickRandomFace() {
+  let next;
+  do {
+    next = faces[Math.floor(Math.random() * faces.length)];
+  } while (next === lastFace);  // 直前と同じなら引き直し
+
+  lastFace = next;
+  return next;
     }
 
     function showNewFace() {
@@ -333,6 +340,7 @@ max-width: 100%;
   </script>
 </body>
 </html>
+
 
 
 
