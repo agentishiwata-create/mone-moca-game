@@ -35,25 +35,30 @@
       margin-bottom: 16px;
     }
     .face-area {
-  margin: 16px 0;
-  padding: 16px 0;
+ margin: 12px 0;
+  padding: 4px 0;
   border-radius: 12px;
   border: 1px solid #eee;
-  min-height: 220px;   /* 少し高めに */
+  height: 55vh;              /* ★ 高さを固定（画面の55％ぶん） */
+  max-height: 420px;         /* ★ デカすぎ防止（お好みで） */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  font-weight: bold;
   background: #fafafa;
+  overflow: hidden;          /* はみ出した分は隠す */
     }
     .face-area img {
-    width: 100%;
-  max-width: 380px;      /* 横は最大380pxくらいまで */
-  max-height: 60vh;      /* 画面高さの60%まで使う */
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px;
+  margin: 12px 0;
+  padding: 4px 0;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  height: 55vh;              /* ★ 高さを固定（画面の55％ぶん） */
+  max-height: 420px;         /* ★ デカすぎ防止（お好みで） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  overflow: hidden;          /* はみ出した分は隠す */
     }
     /* ★ ラベルは非表示にしておく */
     .face-label {
@@ -333,4 +338,5 @@
   </script>
 </body>
 </html>
+
 
